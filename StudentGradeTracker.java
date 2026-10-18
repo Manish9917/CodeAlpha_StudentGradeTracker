@@ -3,21 +3,27 @@ import java.util.Scanner;
 
 public class StudentGradeTracker {
 
+    private static final String[] SUBJECTS = {
+        "Java", "C Programming", "DBMS"
+    };
+
     public static void main(String[] args) {
 
         Scanner sc = new Scanner(System.in);
 
-        System.out.println("==================================");
-        System.out.println("      STUDENT GRADE TRACKER");
-        System.out.println("==================================");
+        System.out.println("========================================");
+        System.out.println("       STUDENT GRADE TRACKER");
+        System.out.println("========================================");
 
         int studentCount = readIntInRange(
                 sc, "Enter number of students (1-100): ", 1, 100);
 
         String[] names = new String[studentCount];
-        int[] marks = new int[studentCount];
+        int[][] marks = new int[studentCount][SUBJECTS.length];
+        int[] studentTotals = new int[studentCount];
+        double[] studentAverages = new double[studentCount];
 
-        // Input student names and marks
+        // Input student names and subject-wise marks
         for (int i = 0; i < studentCount; i++) {
 
             System.out.println("\nStudent " + (i + 1));
@@ -30,67 +36,92 @@ public class StudentGradeTracker {
                     break;
                 }
 
-                System.out.println("Name cannot be empty. Try again.");
+                System.out.println("Name cannot be empty.");
             }
 
-            marks[i] = readIntInRange(
-                    sc, "Enter marks (0-100): ", 0, 100);
+            for (int j = 0; j < SUBJECTS.length; j++) {
+                System.out.println("Subject: " + SUBJECTS[j]);
+
+                marks[i][j] = readIntInRange(
+                        sc, "Enter marks (0-100): ", 0, 100);
+
+                studentTotals[i] += marks[i][j];
+            }
+
+            studentAverages[i] =
+                    (double) studentTotals[i] / SUBJECTS.length;
         }
 
-        // Calculate total, highest and lowest marks
-        int totalMarks = 0;
-        int highest = marks[0];
-        int lowest = marks[0];
+        // Calculate overall highest and lowest subject marks
+        int highest = marks[0][0];
+        int lowest = marks[0][0];
+        int overallTotal = 0;
+
+        for (int i = 0; i < studentCount; i++) {
+            for (int j = 0; j < SUBJECTS.length; j++) {
+
+                overallTotal += marks[i][j];
+
+                if (marks[i][j] > highest) {
+                    highest = marks[i][j];
+                }
+
+                if (marks[i][j] < lowest) {
+                    lowest = marks[i][j];
+                }
+            }
+        }
+
+        double overallAverage =
+                (double) overallTotal
+                        / (studentCount * SUBJECTS.length);
+
+        // Display individual student reports
+        System.out.println("\n========================================");
+        System.out.println("       INDIVIDUAL STUDENT REPORTS");
+        System.out.println("========================================");
 
         for (int i = 0; i < studentCount; i++) {
 
-            totalMarks += marks[i];
+            System.out.println("\nStudent Name: " + names[i]);
+            System.out.println("----------------------------------------");
 
-            if (marks[i] > highest) {
-                highest = marks[i];
+            for (int j = 0; j < SUBJECTS.length; j++) {
+                System.out.printf("%-18s : %3d%n",
+                        SUBJECTS[j], marks[i][j]);
             }
 
-            if (marks[i] < lowest) {
-                lowest = marks[i];
-            }
+            System.out.println("----------------------------------------");
+            System.out.println("Total Marks : "
+                    + studentTotals[i] + " / "
+                    + (SUBJECTS.length * 100));
+
+            System.out.printf("Average     : %.2f%n",
+                    studentAverages[i]);
+
+            System.out.println("Grade       : "
+                    + calculateGrade(studentAverages[i]));
         }
 
-        double average = (double) totalMarks / studentCount;
-
-        // Display report for all students
-        System.out.println("\n==================================");
-        System.out.println("         STUDENT REPORT");
-        System.out.println("==================================");
-
-        System.out.printf("%-20s %-10s %-10s%n",
-                "Student Name", "Marks", "Grade");
-
-        System.out.println("----------------------------------");
-
-        for (int i = 0; i < studentCount; i++) {
-            System.out.printf("%-20s %-10d %-10s%n",
-                    names[i], marks[i], calculateGrade(marks[i]));
-        }
-
-        // Display overall summary
-        System.out.println("\n==================================");
-        System.out.println("         SUMMARY REPORT");
-        System.out.println("==================================");
+        // Display overall class summary
+        System.out.println("\n========================================");
+        System.out.println("          CLASS SUMMARY");
+        System.out.println("========================================");
 
         System.out.println("Total Students : " + studentCount);
-        System.out.println("Total Marks    : " + totalMarks);
-        System.out.printf("Average Marks  : %.2f%n", average);
-        System.out.println("Highest Marks  : " + highest);
-        System.out.println("Lowest Marks   : " + lowest);
+        System.out.println("Total Subjects : " + SUBJECTS.length);
+        System.out.println("Total Marks    : " + overallTotal);
+        System.out.printf("Class Average  : %.2f%n", overallAverage);
+        System.out.println("Highest Subject Mark : " + highest);
+        System.out.println("Lowest Subject Mark  : " + lowest);
 
-        System.out.println("==================================");
-        System.out.println("   Thank you for using the app!");
-        System.out.println("==================================");
+        System.out.println("========================================");
+        System.out.println("Thank you for using Student Grade Tracker!");
 
         sc.close();
     }
 
-    // Accept only valid integer input within a range
+    // Read and validate integer input
     private static int readIntInRange(
             Scanner sc, String prompt, int min, int max) {
 
@@ -106,27 +137,26 @@ public class StudentGradeTracker {
                 }
 
                 System.out.println(
-                        "Please enter a value between "
-                                + min + " and " + max + ".");
+                        "Enter a value between " + min + " and " + max + ".");
 
             } catch (NumberFormatException e) {
-                System.out.println("Invalid input. Please enter a number.");
+                System.out.println("Invalid input. Enter a whole number.");
             }
         }
     }
 
-    // Assign a grade based on marks
-    private static String calculateGrade(int marks) {
+    // Calculate grade from the student's average
+    private static String calculateGrade(double average) {
 
-        if (marks >= 90) {
+        if (average >= 90) {
             return "A+";
-        } else if (marks >= 80) {
+        } else if (average >= 80) {
             return "A";
-        } else if (marks >= 70) {
+        } else if (average >= 70) {
             return "B";
-        } else if (marks >= 60) {
+        } else if (average >= 60) {
             return "C";
-        } else if (marks >= 40) {
+        } else if (average >= 40) {
             return "D";
         } else {
             return "F";
